@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"strings"
 	"time"
 	"unicode"
 )
@@ -16,21 +20,62 @@ var dictionary = []string{
 	"Hangman",
 }
 
+var inputReader *bufio.Reader = bufio.NewReader(os.Stdin)
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	targetWord := getRandomWord()
-
-	targetWord = "United States of America"
-
 	guessed := initializeGuessedWords(targetWord)
+	hangmanState := 0
 
-	renderGameState(targetWord, guessed)
+	for {
+		renderGameState(targetWord, guessed, hangmanState)
 
-	guessed['s'] = true
+		input := readInput()
 
-	renderGameState(targetWord, guessed)
+		fmt.Println(len(input))
 
+		if len(input) != 1 {
+			fmt.Println("Please provide a letter. Not number, not special characters, not words.")
+
+			continue
+		} else {
+
+		}
+	}
+
+}
+
+func renderGameState(targetWord string, guessedLetters map[rune]bool, hangmanState int) {
+	fmt.Println(renderGuessingProgress(targetWord, guessedLetters))
+	fmt.Println()
+	fmt.Println(renderHangman(hangmanState))
+}
+
+func renderHangman(state int) string {
+	data, err := ioutil.ReadFile(fmt.Sprintf("states/hangman%d", state))
+
+	if err != nil {
+		panic(err)
+	}
+
+	return string(data)
+}
+
+func renderGuessingProgress(targetWord string, guessedLetters map[rune]bool) string {
+	var result string
+	for _, letter := range targetWord {
+		if letter == ' ' {
+			result += "        "
+		} else if guessedLetters[unicode.ToLower(letter)] == true {
+			result += fmt.Sprintf("%c", letter)
+		} else {
+			result += " _ "
+		}
+	}
+
+	return result
 }
 
 func getRandomWord() string {
@@ -48,17 +93,13 @@ func initializeGuessedWords(targetWord string) map[rune]bool {
 	return guessedLetters
 }
 
-func renderGameState(targetWord string, guessedLetters map[rune]bool) {
+func readInput() string {
+	fmt.Print(">>>  ")
+	input, err := inputReader.ReadString('\n')
 
-	for _, letter := range targetWord {
-		if letter == ' ' {
-			fmt.Print("        ")
-		} else if guessedLetters[unicode.ToLower(letter)] == true {
-			fmt.Printf("%c", letter)
-		} else {
-			fmt.Print(" _ ")
-		}
+	if err != nil {
+		panic(err)
 	}
 
-	fmt.Println()
+	return strings.TrimSpace(input)
 }
