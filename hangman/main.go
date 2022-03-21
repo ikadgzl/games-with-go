@@ -26,11 +26,11 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	targetWord := getRandomWord()
-	guessed := initializeGuessedWords(targetWord)
+	guessedLetters := initializeGuessedWords(targetWord)
 	hangmanState := 0
 
-	for {
-		renderGameState(targetWord, guessed, hangmanState)
+	for !isGameOver(targetWord, guessedLetters, hangmanState) {
+		renderGameState(targetWord, guessedLetters, hangmanState)
 
 		input := readInput()
 
@@ -40,11 +40,55 @@ func main() {
 			fmt.Println("Please provide a letter. Not number, not special characters, not words.")
 
 			continue
-		} else {
+		}
 
+		letter := rune(input[0])
+
+		if alreadyGuessed(guessedLetters, letter) {
+			fmt.Printf("You already guessed the letter %c.\n", letter)
+
+			continue
+		}
+
+		if isCorrectGuess(targetWord, letter) {
+			guessedLetters[letter] = true
+		} else {
+			hangmanState++
 		}
 	}
 
+	fmt.Println("Game Over")
+	if isWordGuessed(targetWord, guessedLetters) {
+		fmt.Println("You win")
+	} else {
+		fmt.Println("You lose")
+	}
+}
+
+func alreadyGuessed(guessedLetters map[rune]bool, input rune) bool {
+	return guessedLetters[input] == true
+}
+
+func isGameOver(targetWord string, guessedLetters map[rune]bool, hangmanState int) bool {
+	return isWordGuessed(targetWord, guessedLetters) || isHangmanComplete(hangmanState)
+}
+
+func isWordGuessed(targetWord string, guessedLetters map[rune]bool) bool {
+	for _, letter := range targetWord {
+		if !guessedLetters[unicode.ToLower(letter)] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isHangmanComplete(hangmanState int) bool {
+	return hangmanState == 9
+}
+
+func isCorrectGuess(targetWord string, guess rune) bool {
+	return strings.ContainsRune(targetWord, guess)
 }
 
 func renderGameState(targetWord string, guessedLetters map[rune]bool, hangmanState int) {
@@ -68,7 +112,7 @@ func renderGuessingProgress(targetWord string, guessedLetters map[rune]bool) str
 	for _, letter := range targetWord {
 		if letter == ' ' {
 			result += "        "
-		} else if guessedLetters[unicode.ToLower(letter)] == true {
+		} else if guessedLetters[unicode.ToLower(letter)] {
 			result += fmt.Sprintf("%c", letter)
 		} else {
 			result += " _ "
